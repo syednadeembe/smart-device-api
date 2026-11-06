@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlsplit
@@ -20,23 +21,21 @@ class SmartDeviceHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/temperature":
+            cpu_temperature = round(random.uniform(0.0, 100.0), 1)
+            gpu_temperature = round(random.uniform(0.0, 100.0), 1)
             self._send_json(
                 200,
                 {
                     "device": os.environ.get("DEVICE_NAME", "smart-device"),
-                    "temperature_c": self._temperature(),
+                    "cpu_temperature_c": cpu_temperature,
+                    "gpu_temperature_c": gpu_temperature,
                     "unit": "celsius",
+                    "ideal_range_c": {"min": 40.0, "max": 60.0},
                 },
             )
             return
 
         self._send_json(404, {"error": "not_found", "message": "Try /healthz or /temperature."})
-
-    def _temperature(self) -> float:
-        try:
-            return float(os.environ.get("TEMPERATURE_C", "22.5"))
-        except ValueError:
-            return 22.5
 
     def _send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
